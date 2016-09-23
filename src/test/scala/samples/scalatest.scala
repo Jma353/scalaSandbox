@@ -56,7 +56,7 @@ import org.scalatest.matchers.ShouldMatchers
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 @RunWith(classOf[JUnitRunner])
-class ListSuite extends FunSuite with ShouldMatchers {
+class  ListSuite extends FunSuite with ShouldMatchers {
 
   test("An empty list should be empty") {
     List() should be ('empty)
