@@ -17,7 +17,7 @@ object App {
     val sc = new SparkContext(conf)
 
     // Do work
-    WordCount.wordCount(sc, args)
+    SimpleTransformations.findMovieBefore(sc, args(0).toInt, args(1))
 
   }
 }
@@ -51,5 +51,50 @@ object WordCount {
 
   }
 
+}
+
+// Simple RDD transformations for the purposes of learning
+object SimpleTransformations {
+
+  // Movie data we're working with
+  val movies = Array("Frozen, 2013", "Toy Story, 1995", "WALL-E, 2008", "Despicable Me, 2010",
+    "Shrek, 2001", "The Lego Movie, 2014", "Alice in Wonderland, 2010")
+
+  // Specify a year
+  def findMovieBefore(sc: SparkContext, year: Int, outputNamespace: String): Unit = {
+    // Filter on that year
+    val filteredMovies = sc.parallelize(movies)
+      .filter(m => m.split(",").last.trim.toInt < year)
+
+    // Add "old", and "ancient" tags
+    val taggedMovies = filteredMovies.map(d => (d, Set("old", "ancient")))
+
+    // Grab the tags from each, and flatMap them (so set of 2 becomes 2 separate RDD's)
+    // and call distinct to remove duplicates
+    val movieTags = taggedMovies.flatMap { case (d, tags) => tags }.distinct
+
+    // Cartesian allows us to cross records (like a full JOIN in db)
+    // Basically keep around the ones where a != b
+    val pairs = movieTags.cartesian(movieTags).filter { case (a,b) => a != b }
+
+
+    // Saving the results as necessary
+    filteredMovies.saveAsTextFile(outputNamespace + "_filtered_movies")
+    taggedMovies.saveAsTextFile(outputNamespace + "_tagged_movies")
+    movieTags.saveAsTextFile(outputNamespace + "_movie_tags")
+    pairs.saveAsTextFile(outputNamespace + "_tag_pairs")
+
+  }
 
 }
+
+
+
+
+
+
+
+
+
+
+
